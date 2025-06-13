@@ -23,6 +23,7 @@
 ## 📢 最新动态
 
 ### 更新日志
+
 - [2025.06.12] ⭐️⭐️⭐️ 版本 0.4.1发布:
   - 增加对[MuseTalk](https://github.com/TMElyralab/MuseTalk)数字人的支持，支持自定义形象（底版视频自定义）
   - 50个LiteAvatar新形象发布，丰富各种职业角色，请见[LiteAvatarGallery](https://modelscope.cn/models/HumanAIGC-Engineering/LiteAvatarGallery)

@@ -20,6 +20,7 @@
 ## 📢 News
 
 ### Changelog
+
 - [2025.06.12] ⭐️⭐️⭐️ Version 0.4.1 Released:
   - Added support for [MuseTalk](https://github.com/TMElyralab/MuseTalk), including customizable videos for personalized avatars.
   - Released 50 new LiteAvatar styles featuring a variety of professional roles. Please refer to [LiteAvatarGallery](https://modelscope.cn/models/HumanAIGC-Engineering/LiteAvatarGallery).
