@@ -1,3 +1,3 @@
-﻿from .adaptive_vad import AdaptiveVADHandler
+﻿from .vad_handler_adaptive import AdaptiveVADHandler
 
 __all__ = ['AdaptiveVADHandler']

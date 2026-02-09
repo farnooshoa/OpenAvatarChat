@@ -1,3 +1,3 @@
-﻿from .barge_in_handler import BargeInHandler
+﻿from .interrupt_handler_bargein import BargeInHandler
 
 __all__ = ['BargeInHandler']
