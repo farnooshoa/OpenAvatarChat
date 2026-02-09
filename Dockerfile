@@ -28,6 +28,8 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # Install PyTorch (CPU version)
 RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+# Install fastrtc from local wheel
+RUN pip install --no-cache-dir libs/fastrtc-0.0.28.dev0-py3-none-any.whl
 
 # Install all other required packages
 RUN pip install --no-cache-dir \
