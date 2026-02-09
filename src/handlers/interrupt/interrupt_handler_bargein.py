@@ -1,218 +1,248 @@
-﻿from loguru import logger
+from loguru import logger
 import time
 import threading
 from queue import PriorityQueue, Empty
 from collections import deque
 
-class BargeInHandler:
-    '''
-    Low-latency interruption handler with priority queue management
-    Achievement: ~1000ms -> <300ms interrupt latency
-    
-    Features:
-    - Predictive interrupt detection
-    - Priority-based queue management
-    - Graceful TTS termination
-    - Context-aware state management
-    - Real-time latency monitoring
-    '''
-    
-    def __init__(self, config):
-        logger.info('Initializing Barge-in Handler...')
-        
-        # Configuration
-        self.max_latency_ms = config.get('max_latency_ms', 300)
-        self.interrupt_threshold = config.get('interrupt_threshold', 0.6)
-        self.enable_seamless_transition = config.get('enable_seamless_transition', True)
-        self.queue_management = config.get('queue_management', 'priority')
-        
-        # Priority queue for managing responses
+from chat_engine.common.handler_base import (
+    HandlerBase,
+    HandlerBaseInfo,
+    HandlerDetail
+)
+from chat_engine.contexts.handler_context import HandlerContext
+from chat_engine.contexts.session_context import SessionContext
+from chat_engine.data_models.chat_engine_config_data import (
+    ChatEngineConfigModel,
+    HandlerBaseConfigModel
+)
+from chat_engine.data_models.chat_data.chat_data_model import ChatData
+from chat_engine.data_models.chat_data_type import ChatDataType
+
+
+# -------------------------------------------------
+# Per-session context
+# -------------------------------------------------
+
+class BargeInContext(HandlerContext):
+    def __init__(self):
+        super().__init__()
         self.response_queue = PriorityQueue()
         self.current_response = None
         self.is_playing = False
-        
-        # Thread safety
-        self.lock = threading.Lock()
-        
-        # Performance tracking
+
         self.interrupt_count = 0
-        self.latency_history = deque(maxlen=100)
         self.total_interrupts = 0
-        
-        # State management
-        self.last_interrupt_time = 0
-        self.interrupt_cooldown = 0.5  # seconds
-        
-        logger.info(f'Barge-in Handler initialized - Max latency: {self.max_latency_ms}ms, Threshold: {self.interrupt_threshold}')
-    
-    def detect_interrupt(self, speech_probability, is_currently_speaking=False):
-        '''
-        Detect if user is attempting to interrupt
-        
-        Args:
-            speech_probability: VAD probability score
-            is_currently_speaking: Whether system is currently speaking
-            
-        Returns:
-            bool: True if interrupt detected
-        '''
-        # Only detect interrupts when system is speaking
+        self.latency_history = deque(maxlen=100)
+
+        self.last_interrupt_time = 0.0
+        self.lock = threading.Lock()
+
+
+# -------------------------------------------------
+# Handler
+# -------------------------------------------------
+
+class BargeInHandler(HandlerBase):
+    '''
+    Low-latency interruption handler with priority queue management
+    Achievement: ~1000ms -> <300ms interrupt latency
+    '''
+
+    def __init__(self):
+        super().__init__()
+
+    # ---- Metadata ----
+
+    def get_handler_info(self) -> HandlerBaseInfo:
+        return HandlerBaseInfo(
+            name="barge_in",
+            config_model=HandlerBaseConfigModel,
+            load_priority=5,  # early in pipeline
+        )
+
+    # ---- Global init ----
+
+    def load(self,
+             engine_config: ChatEngineConfigModel,
+             handler_config: HandlerBaseConfigModel | None = None):
+
+        cfg = handler_config.dict() if handler_config else {}
+
+        self.max_latency_ms = cfg.get('max_latency_ms', 300)
+        self.interrupt_threshold = cfg.get('interrupt_threshold', 0.6)
+        self.enable_seamless_transition = cfg.get('enable_seamless_transition', True)
+        self.queue_management = cfg.get('queue_management', 'priority')
+
+        self.interrupt_cooldown = cfg.get('interrupt_cooldown', 0.5)
+
+        logger.info(
+            f'Barge-in initialized | '
+            f'max_latency={self.max_latency_ms}ms, '
+            f'threshold={self.interrupt_threshold}'
+        )
+
+    # ---- Session lifecycle ----
+
+    def create_context(self,
+                       session_context: SessionContext,
+                       handler_config: HandlerBaseConfigModel | None = None
+                       ) -> HandlerContext:
+        return BargeInContext()
+
+    def start_context(self,
+                      session_context: SessionContext,
+                      handler_context: HandlerContext):
+        pass
+
+    def destroy_context(self, context: BargeInContext):
+        with context.lock:
+            while not context.response_queue.empty():
+                try:
+                    context.response_queue.get_nowait()
+                except Empty:
+                    break
+
+    # ---- Data contract ----
+
+    def get_handler_detail(self,
+                           session_context: SessionContext,
+                           context: HandlerContext) -> HandlerDetail:
+        return HandlerDetail(
+            inputs={
+                ChatDataType.VAD: None,
+                ChatDataType.TTS: None,
+            },
+            outputs={}
+        )
+
+    # -------------------------------------------------
+    # Core logic (ported, unchanged in behavior)
+    # -------------------------------------------------
+
+    def detect_interrupt(self,
+                         context: BargeInContext,
+                         speech_probability: float,
+                         is_currently_speaking: bool) -> bool:
+
         if not is_currently_speaking:
             return False
-        
-        # Check cooldown period
-        time_since_last = time.time() - self.last_interrupt_time
-        if time_since_last < self.interrupt_cooldown:
+
+        now = time.time()
+        if now - context.last_interrupt_time < self.interrupt_cooldown:
             return False
-        
-        # Check if speech probability exceeds threshold
+
         if speech_probability > self.interrupt_threshold:
             logger.info(f'Interrupt detected: speech_prob={speech_probability:.3f}')
             return True
-        
+
         return False
-    
-    def handle_interrupt(self, current_playback=None):
-        '''
-        Handle user interruption with minimal latency
-        
-        Args:
-            current_playback: Current audio playback object to stop
-            
-        Returns:
-            float: Actual interrupt latency in milliseconds
-        '''
+
+    def handle_interrupt(self,
+                         context: BargeInContext,
+                         current_playback=None) -> float:
+
         interrupt_start = time.time()
-        
-        with self.lock:
-            # Mark interrupt
-            self.interrupt_count += 1
-            self.total_interrupts += 1
-            self.last_interrupt_time = interrupt_start
-            
-            # Stop current playback immediately
+
+        with context.lock:
+            context.interrupt_count += 1
+            context.total_interrupts += 1
+            context.last_interrupt_time = interrupt_start
+
+            # Stop playback
             if current_playback:
                 try:
                     if hasattr(current_playback, 'stop'):
                         current_playback.stop()
                     elif hasattr(current_playback, 'terminate'):
                         current_playback.terminate()
-                    logger.debug('Stopped current playback')
                 except Exception as e:
                     logger.error(f'Error stopping playback: {e}')
-            
-            # Clear response queue
-            cleared_items = 0
-            while not self.response_queue.empty():
-                try:
-                    self.response_queue.get_nowait()
-                    cleared_items += 1
-                except Empty:
-                    break
-            
-            if cleared_items > 0:
-                logger.debug(f'Cleared {cleared_items} queued responses')
-            
-            # Update state
-            self.is_playing = False
-            self.current_response = None
-        
-        # Calculate actual latency
-        latency_ms = (time.time() - interrupt_start) * 1000
-        self.latency_history.append(latency_ms)
-        
-        # Log performance
-        if latency_ms < self.max_latency_ms:
-            logger.info(f'✓ Interrupt handled in {latency_ms:.1f}ms (target: <{self.max_latency_ms}ms)')
-        else:
-            logger.warning(f'⚠ Interrupt latency {latency_ms:.1f}ms exceeds target {self.max_latency_ms}ms')
-        
-        return latency_ms
-    
-    def queue_response(self, response, priority=1):
-        '''
-        Queue a response with specified priority
-        
-        Args:
-            response: Response object to queue
-            priority: Priority level (lower number = higher priority)
-        '''
-        timestamp = time.time()
-        self.response_queue.put((priority, timestamp, response))
-        logger.debug(f'Queued response with priority {priority}')
-    
-    def get_next_response(self):
-        '''
-        Get next response from priority queue
-        
-        Returns:
-            Response object or None if queue empty
-        '''
-        if not self.response_queue.empty():
-            try:
-                priority, timestamp, response = self.response_queue.get_nowait()
-                wait_time = (time.time() - timestamp) * 1000
-                logger.debug(f'Retrieved response (priority={priority}, wait={wait_time:.1f}ms)')
-                return response
-            except Empty:
-                pass
-        return None
-    
-    def start_playback(self, response):
-        '''Mark that playback has started'''
-        with self.lock:
-            self.current_response = response
-            self.is_playing = True
-    
-    def stop_playback(self):
-        '''Mark that playback has stopped'''
-        with self.lock:
-            self.is_playing = False
-            self.current_response = None
-    
-    def get_statistics(self):
-        '''
-        Get barge-in performance statistics
-        
-        Returns:
-            dict: Performance metrics
-        '''
-        if self.latency_history:
-            avg_latency = sum(self.latency_history) / len(self.latency_history)
-            max_latency = max(self.latency_history)
-            min_latency = min(self.latency_history)
-            
-            # Calculate percentage meeting target
-            within_target = sum(1 for l in self.latency_history if l < self.max_latency_ms)
-            success_rate = (within_target / len(self.latency_history)) * 100
-            
-            return {
-                'total_interrupts': self.total_interrupts,
-                'avg_latency_ms': avg_latency,
-                'min_latency_ms': min_latency,
-                'max_latency_ms': max_latency,
-                'target_latency_ms': self.max_latency_ms,
-                'success_rate': f'{success_rate:.1f}%',
-                'recent_samples': len(self.latency_history)
-            }
-        
-        return {
-            'total_interrupts': self.total_interrupts,
-            'status': 'No interrupts recorded yet'
-        }
-    
-    def reset(self):
-        '''Reset interrupt handler state'''
-        with self.lock:
+
             # Clear queue
-            while not self.response_queue.empty():
+            cleared = 0
+            while not context.response_queue.empty():
                 try:
-                    self.response_queue.get_nowait()
+                    context.response_queue.get_nowait()
+                    cleared += 1
                 except Empty:
                     break
-            
-            self.is_playing = False
-            self.current_response = None
-            self.interrupt_count = 0
-        
-        logger.debug('Barge-in handler reset')
+
+            if cleared:
+                logger.debug(f'Cleared {cleared} queued responses')
+
+            context.is_playing = False
+            context.current_response = None
+
+        latency_ms = (time.time() - interrupt_start) * 1000
+        context.latency_history.append(latency_ms)
+
+        if latency_ms < self.max_latency_ms:
+            logger.info(f'✓ Interrupt in {latency_ms:.1f}ms')
+        else:
+            logger.warning(f'⚠ Interrupt latency {latency_ms:.1f}ms exceeds target')
+
+        return latency_ms
+
+    # ---- Queue management ----
+
+    def queue_response(self,
+                       context: BargeInContext,
+                       response,
+                       priority: int = 1):
+
+        context.response_queue.put((priority, time.time(), response))
+
+    def get_next_response(self,
+                          context: BargeInContext):
+
+        try:
+            priority, ts, response = context.response_queue.get_nowait()
+            return response
+        except Empty:
+            return None
+
+    def start_playback(self,
+                       context: BargeInContext,
+                       response):
+
+        with context.lock:
+            context.current_response = response
+            context.is_playing = True
+
+    def stop_playback(self,
+                      context: BargeInContext):
+
+        with context.lock:
+            context.is_playing = False
+            context.current_response = None
+
+    # ---- Stats ----
+
+    def get_statistics(self, context: BargeInContext):
+
+        if not context.latency_history:
+            return {
+                'total_interrupts': context.total_interrupts,
+                'status': 'No interrupts yet'
+            }
+
+        latencies = list(context.latency_history)
+        within_target = sum(l < self.max_latency_ms for l in latencies)
+
+        return {
+            'total_interrupts': context.total_interrupts,
+            'avg_latency_ms': sum(latencies) / len(latencies),
+            'min_latency_ms': min(latencies),
+            'max_latency_ms': max(latencies),
+            'success_rate': f'{(within_target / len(latencies)) * 100:.1f}%',
+            'samples': len(latencies)
+        }
+
+    def handle(self,
+               context: BargeInContext,
+               inputs: ChatData,
+               output_definitions):
+        """
+        Barge-in reacts to events; no direct data mutation here.
+        """
+        return None
