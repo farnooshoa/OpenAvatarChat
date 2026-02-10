@@ -63,4 +63,4 @@ RUN pip install --no-cache-dir \
 EXPOSE 7860
 
 # Run the demo
-CMD ["python", "-c", "import os; os.environ['GRADIO_SERVER_NAME']='0.0.0.0'; os.environ['GRADIO_SERVER_PORT']='7860'; exec(open('src/demo.py').read())"]
+CMD ["python", "src/demo.py", "--config", "config/chat_with_groq_enhanced.yaml", "--host", "0.0.0.0", "--port", "7860"]
