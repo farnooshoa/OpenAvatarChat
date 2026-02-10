@@ -73,6 +73,6 @@ default:
         use_gpu: false  # Set to true if using GPU Space
         enable_fast_mode: true
 
-      RtcClient:
-        module: client/rtc_client/client_handler_rtc
-        turn_config: null  # HuggingFace handles networking
+      #RtcClient:
+        #module: client/rtc_client/client_handler_rtc
+        #turn_config: null  # HuggingFace handles networking
