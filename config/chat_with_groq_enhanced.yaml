@@ -19,7 +19,7 @@ default:
 
      
       SileraVad:
-        module: vad/enhanced/adaptive_vad
+        module: vad/enhanced/vad_handler_adaptive
         speaking_threshold: 0.5
         start_delay: 2048
         end_delay: 2048
