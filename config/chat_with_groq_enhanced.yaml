@@ -1,13 +1,10 @@
-# HuggingFace Spaces Configuration for Enhanced OpenAvatarChat
-# Optimized for Groq API with speech recognition enhancements
-
 log:
   log_level: "INFO"
 
 service:
   host: "0.0.0.0"
-  port: 7860  # HuggingFace Spaces default port
-  cert_file: null  # HuggingFace handles SSL/TLS
+  port: 7860
+  cert_file: null
   cert_key: null
 
 default:
@@ -15,9 +12,6 @@ default:
     model_root: "models"
     handler_search_path: ["src/handlers"]
     handler_configs:
-      
-
-     
       SileraVad:
         module: vad/enhanced/vad_handler_adaptive
         speaking_threshold: 0.5
@@ -25,12 +19,10 @@ default:
         end_delay: 2048
         buffer_look_back: 1024
         speech_padding: 512
-        # Enhanced features
         adaptive_threshold: true
         noise_gate_db: -40
         dynamic_sensitivity: true
       
-   
       AudioProcessor:
         module: audio/enhanced/audio_handler_noise_reduction
         enable_noise_reduction: true
@@ -38,41 +30,24 @@ default:
         spectral_subtraction: true
         wiener_filtering: true
       
- 
       ASR_Funasr:
         module: asr/sensevoice/asr_handler_sensevoice
         model_name: "iic/SenseVoiceSmall"
       
-
       LLMGroq:
         module: llm/openai_compatible/llm_handler_openai_compatible
         model_name: "llama-3.1-70b-versatile"
-        system_prompt: "You are an intelligent AI avatar assistant with enhanced speech recognition capabilities. Respond naturally and concisely in conversation. Focus on clear, engaging dialogue suitable for voice interaction."
+        system_prompt: "You are an AI avatar assistant with enhanced speech recognition. Respond concisely and naturally."
         api_url: "https://api.groq.com/openai/v1"
         api_key: "${GROQ_API_KEY}"
-        max_tokens: 150
-        temperature: 0.7
-
+      
       BargeInHandler:
         module: interrupt/interrupt_handler_bargein
         max_latency_ms: 300
         interrupt_threshold: 0.6
         enable_seamless_transition: true
         queue_management: "priority"
-
+      
       TTS_EdgeTTS:
         module: tts/edgetts/tts_handler_edgetts
-        voice: "en-US-JennyNeural"  # Natural female voice
-        rate: "+0%"
-        volume: "+0%"
-
-      LiteAvatar:
-        module: avatar/liteavatar/avatar_handler_liteavatar
-        avatar_name: "sample_data"
-        fps: 25
-        use_gpu: false  # Set to true if using GPU Space
-        enable_fast_mode: true
-
-      #RtcClient:
-        #module: client/rtc_client/client_handler_rtc
-        #turn_config: null  # HuggingFace handles networking
+        voice: "en-US-JennyNeural"
