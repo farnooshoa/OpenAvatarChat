@@ -55,7 +55,9 @@ RUN pip install --no-cache-dir \
     scikit-learn \
     transformers \
     sentencepiece \
-    protobuf
+    protobuf \
+    opencv-python-headless
+
 
 # Expose Gradio port
 EXPOSE 7860
