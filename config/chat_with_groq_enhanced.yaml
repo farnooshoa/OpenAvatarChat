@@ -13,14 +13,12 @@ service:
 default:
   chat_engine:
     model_root: "models"
+    handler_search_path: ["src/handlers"]
     handler_configs:
       
-      # ============================================
-      # ENHANCEMENT 1: Adaptive VAD
-      # Improvement: 75% → 95% speech capture
-      # ============================================
+
       SileraVad:
-        module: vad/enhanced/adaptive_vad
+        module:vad/enhanced/vad_handler_adaptive
         speaking_threshold: 0.5
         start_delay: 2048
         end_delay: 2048
@@ -31,10 +29,7 @@ default:
         noise_gate_db: -40
         dynamic_sensitivity: true
       
-      # ============================================
-      # ENHANCEMENT 2: Noise Reduction
-      # Improvement: 30% → 10% Word Error Rate
-      # ============================================
+   
       AudioProcessor:
         module: audio/enhanced/noise_reducer
         enable_noise_reduction: true
@@ -42,17 +37,12 @@ default:
         spectral_subtraction: true
         wiener_filtering: true
       
-      # ============================================
-      # ASR Handler - SenseVoice
-      # ============================================
+ 
       ASR_Funasr:
         module: asr/sensevoice/asr_handler_sensevoice
         model_name: "iic/SenseVoiceSmall"
       
-      # ============================================
-      # LLM Handler - Groq API
-      # Using fast llama-3.1-70b for low latency
-      # ============================================
+
       LLMGroq:
         module: llm/openai_compatible/llm_handler/llm_handler_openai_compatible
         model_name: "llama-3.1-70b-versatile"
@@ -61,41 +51,27 @@ default:
         api_key: "${GROQ_API_KEY}"
         max_tokens: 150
         temperature: 0.7
-      
-      # ============================================
-      # ENHANCEMENT 3: Barge-in Handler
-      # Improvement: <300ms interrupt latency
-      # ============================================
+
       BargeInHandler:
         module: interrupt/barge_in_handler
         max_latency_ms: 300
         interrupt_threshold: 0.6
         enable_seamless_transition: true
         queue_management: "priority"
-      
-      # ============================================
-      # TTS Handler - Edge TTS (Free, Fast)
-      # ============================================
+
       TTS_EdgeTTS:
         module: tts/edgetts/tts_handler_edgetts
         voice: "en-US-JennyNeural"  # Natural female voice
         rate: "+0%"
         volume: "+0%"
-      
-      # ============================================
-      # Avatar Handler - LiteAvatar
-      # CPU-optimized for HuggingFace free tier
-      # ============================================
+
       LiteAvatar:
         module: avatar/liteavatar/avatar_handler_liteavatar
         avatar_name: "sample_data"
         fps: 25
         use_gpu: false  # Set to true if using GPU Space
         enable_fast_mode: true
-      
-      # ============================================
-      # RTC Client Handler
-      # ============================================
+
       RtcClient:
         module: client/rtc_client/client_handler_rtc
         turn_config: null  # HuggingFace handles networking
