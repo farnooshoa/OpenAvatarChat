@@ -68,7 +68,7 @@ def setup_demo():
                 pass
     @app.get("/")
     async def root():
-        return RedirectResponse(url="/gradio")
+        return RedirectResponse(url="/gradio/")
 
     gradio.mount_gradio_app(app, gradio_block, "/gradio")
     return app, gradio_block, rtc_container
