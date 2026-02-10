@@ -31,7 +31,7 @@ default:
       
    
       AudioProcessor:
-        module: audio/enhanced/noise_reducer
+        module: audio/enhanced/audio_handler_noise_reduction
         enable_noise_reduction: true
         target_wer: 0.10
         spectral_subtraction: true
@@ -53,7 +53,7 @@ default:
         temperature: 0.7
 
       BargeInHandler:
-        module: interrupt/barge_in_handler
+        module: interrupt/interrupt_handler_bargein
         max_latency_ms: 300
         interrupt_threshold: 0.6
         enable_seamless_transition: true
