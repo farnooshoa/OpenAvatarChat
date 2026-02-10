@@ -66,6 +66,10 @@ def setup_demo():
         with gr.Column():
             with gr.Group() as rtc_container:
                 pass
+    @app.get("/")
+    async def root():
+        return RedirectResponse(url="/gradio")
+
     gradio.mount_gradio_app(app, gradio_block, "/gradio")
     return app, gradio_block, rtc_container
 
