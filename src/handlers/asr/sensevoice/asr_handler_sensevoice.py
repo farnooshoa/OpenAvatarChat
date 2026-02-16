@@ -19,6 +19,8 @@ from funasr import AutoModel
 
 from engine_utils.directory_info import DirectoryInfo
 from engine_utils.general_slicer import SliceContext, slice_data
+from handlers.audio.enhanced.audio_handler_noise_reduction import AudioPreprocessor, NoiseProfiler
+
 
 
 class ASRConfig(HandlerBaseConfigModel, BaseModel):
@@ -164,3 +166,58 @@ class HandlerASR(HandlerBase, ABC):
 
     def destroy_context(self, context: HandlerContext):
         pass
+class EnhancedSenseVoiceASR:
+    def __init__(self, config):
+        # Initialize base ASR
+        self.base_asr = SenseVoiceASR(config)
+        
+        # Initialize audio preprocessor
+        self.preprocessor = AudioPreprocessor(config.get('AudioPreprocessing', {}))
+        self.noise_profiler = NoiseProfiler(config.get('NoiseProfiler', {}))
+        
+        # Calibration state
+        self.is_calibrated = False
+        
+    async def calibrate_noise(self, audio_stream, duration_ms=3000):
+        """
+        Perform initial noise calibration
+        Call this when session starts
+        """
+        print("Calibrating noise profile. Please remain silent...")
+        
+        # Collect noise samples
+        samples_needed = int(duration_ms * 16 / 1000)  # Assuming 16kHz
+        noise_audio = []
+        
+        while len(noise_audio) < samples_needed:
+            chunk = await audio_stream.read_async()
+            noise_audio.extend(chunk)
+        
+        # Create noise profile
+        import numpy as np
+        noise_profile = self.noise_profiler.calibrate(
+            np.array(noise_audio[:samples_needed])
+        )
+        
+        self.is_calibrated = True
+        print("Calibration complete!")
+        
+        return noise_profile
+    
+    async def transcribe(self, audio, is_silence=False):
+        """Transcribe audio with noise reduction"""
+        import numpy as np
+        audio_array = np.array(audio)
+        
+        # Update noise profile during silence
+        if is_silence and self.is_calibrated:
+            self.noise_profiler.update_noise_profile(audio_array, True)
+        
+        # Preprocess audio
+        noise_profile = self.noise_profiler.get_noise_profile()
+        processed_audio = self.preprocessor.process(audio_array, noise_profile)
+        
+        # Transcribe
+        transcription = await self.base_asr.transcribe_async(processed_audio)
+        
+        return transcription
