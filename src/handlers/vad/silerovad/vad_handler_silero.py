@@ -16,6 +16,8 @@ from chat_engine.data_models.chat_data.chat_data_model import ChatData
 from chat_engine.data_models.chat_engine_config_data import ChatEngineConfigModel, HandlerBaseConfigModel
 from chat_engine.data_models.runtime_data.data_bundle import DataBundle, DataBundleDefinition, DataBundleEntry
 from engine_utils.general_slicer import SliceContext, slice_data
+from handlers.vad.enhanced.vad_handler_adaptive import AdaptiveVADContext
+
 
 
 class SileroVADConfigModel(HandlerBaseConfigModel, BaseModel):
@@ -264,3 +266,24 @@ class HandlerAudioVAD(HandlerBase, ABC):
 
     def destroy_context(self, context: HandlerContext):
         pass
+        
+class EnhancedSileroVAD:
+    def __init__(self, config):
+        # Initialize base Silero VAD
+        self.base_vad = SileroVAD(config)
+        
+        # Initialize adaptive VAD wrapper
+        self.adaptive_vad = AdaptiveVADHandler(config)
+        
+    def process_audio(self, audio_chunk):
+        """Process audio with adaptive VAD"""
+        # Get speech probability from Silero
+        speech_prob = self.base_vad.get_speech_probability(audio_chunk)
+        
+        # Process through adaptive VAD
+        complete_speech = self.adaptive_vad.process_audio_chunk(
+            audio_chunk, 
+            speech_prob
+        )
+        
+        return complete_speech
