@@ -88,7 +88,11 @@ class AudioPreprocessor:
             noise_frames = min(10, magnitude.shape[1])
             noise_mag = np.mean(magnitude[:, :noise_frames], axis=1, keepdims=True)
         else:
-            noise_mag = noise_spectrum.reshape(-1, 1)
+            from scipy.interpolate import interp1d
+            x_old = np.linspace(0, 1, len(noise_spectrum))
+            x_new = np.linspace(0, 1, magnitude.shape[0])
+            interp_func = interp1d(x_old, noise_spectrum, kind='linear', fill_value='extrapolate')
+            noise_mag = interp_func(x_new).reshape(-1, 1)
         
         # Spectral subtraction with over-subtraction factor
         alpha = self.noise_reduce_strength * 2  # Over-subtraction factor
