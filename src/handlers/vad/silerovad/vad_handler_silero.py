@@ -16,7 +16,7 @@ from chat_engine.data_models.chat_data.chat_data_model import ChatData
 from chat_engine.data_models.chat_engine_config_data import ChatEngineConfigModel, HandlerBaseConfigModel
 from chat_engine.data_models.runtime_data.data_bundle import DataBundle, DataBundleDefinition, DataBundleEntry
 from engine_utils.general_slicer import SliceContext, slice_data
-from handlers.vad.enhanced.vad_handler_adaptive import AdaptiveVADContext
+from handlers.vad.enhanced.vad_handler_adaptive import AdaptiveVADHandler
 
 
 
@@ -241,7 +241,25 @@ class HandlerAudioVAD(HandlerBase, ABC):
         for clip in slice_data(context.slice_context, audio):
             head_sample_id = context.slice_context.get_last_slice_start_index()
             speech_prob = self._inference(context, clip)
-            audio_clip, extra_args = context.update_status(speech_prob, clip, timestamp=head_sample_id)
+         #pass through adaptive VAD BEFORE update_status
+
+            if not hasattr(context, 'adaptive_vad'):
+               context.adaptive_vad = AdaptiveVADHandler({
+                   'speech_threshold': context.config.speaking_threshold,
+                   'sample_rate': 16000,
+               })
+            adapted_audio = context.adaptive_vad.process_audio_chunk(
+               clip, speech_prob
+            )
+
+            #only pass to update_status if adaptive VAD confirms speech
+            effective_prob = speech_prob
+            if context.adaptive_vad.is_speaking:
+                 effective_prob = max(speech_prob, 0.6)  # boost confidence during speech
+    
+            audio_clip, extra_args = context.update_status(
+                 effective_prob, clip, timestamp=head_sample_id
+            )
             # FIXME this is a hack to disable VAD after human speech end,
             #  but it should be handled by client or downstream handlers
             human_speech_end = extra_args.get("human_speech_end", False)
@@ -266,24 +284,5 @@ class HandlerAudioVAD(HandlerBase, ABC):
 
     def destroy_context(self, context: HandlerContext):
         pass
-        
-class EnhancedSileroVAD:
-    def __init__(self, config):
-        # Initialize base Silero VAD
-        self.base_vad = SileroVAD(config)
-        
-        # Initialize adaptive VAD wrapper
-        self.adaptive_vad = AdaptiveVADHandler(config)
-        
-    def process_audio(self, audio_chunk):
-        """Process audio with adaptive VAD"""
-        # Get speech probability from Silero
-        speech_prob = self.base_vad.get_speech_probability(audio_chunk)
-        
-        # Process through adaptive VAD
-        complete_speech = self.adaptive_vad.process_audio_chunk(
-            audio_chunk, 
-            speech_prob
-        )
-        
+    
         return complete_speech
