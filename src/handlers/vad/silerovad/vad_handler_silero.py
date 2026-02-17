@@ -163,6 +163,7 @@ class HandlerAudioVAD(HandlerBase, ABC):
 
     def create_context(self, session_context: SessionContext, handler_config = None) -> HandlerContext:
         context = HumanAudioVADContext(session_context.session_info.session_id)
+        
         context.shared_states = session_context.shared_states
         if isinstance(handler_config, SileroVADConfigModel):
             context.config = handler_config
@@ -173,6 +174,10 @@ class HandlerAudioVAD(HandlerBase, ABC):
         )
         context.history_length_limit = math.ceil((context.config.start_delay + context.config.buffer_look_back)
                                                  / context.clip_size)
+        context.adaptive_vad = AdaptiveVADHandler({
+             'speech_threshold': context.config.speaking_threshold,
+             'sample_rate': 16000,
+         })
         return context
 
     def start_context(self, session_context, handler_context):
@@ -243,11 +248,7 @@ class HandlerAudioVAD(HandlerBase, ABC):
             speech_prob = self._inference(context, clip)
          #pass through adaptive VAD BEFORE update_status
 
-            if not hasattr(context, 'adaptive_vad'):
-               context.adaptive_vad = AdaptiveVADHandler({
-                   'speech_threshold': context.config.speaking_threshold,
-                   'sample_rate': 16000,
-               })
+        
             adapted_audio = context.adaptive_vad.process_audio_chunk(
                clip, speech_prob
             )
