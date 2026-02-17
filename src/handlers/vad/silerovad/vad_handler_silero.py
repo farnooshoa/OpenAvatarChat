@@ -285,4 +285,4 @@ class HandlerAudioVAD(HandlerBase, ABC):
     def destroy_context(self, context: HandlerContext):
         pass
     
-        return complete_speech
+
