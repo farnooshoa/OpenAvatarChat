@@ -1,13 +1,3 @@
----
-title: OpenAvatarChat with Speech Recognition Enhancements
-emoji: 🎤
-colorFrom: blue
-colorTo: purple
-sdk: docker
-pinned: false
-license: apache-2.0
-app_port: 7860
----
 
 # OpenAvatarChat with Speech Recognition Enhancements
 
@@ -25,11 +15,11 @@ app_port: 7860
 
 ---
 
-## 🎯 PhD Interview Demo
+##  PhD Interview Demo
 
 This is an enhanced implementation of [OpenAvatarChat](https://github.com/HumanAIGC-Engineering/OpenAvatarChat) featuring three significant improvements to speech recognition and conversational interaction.
 
-### 🚀 Key Enhancements
+###  Key Enhancements
 
 #### 1. **Adaptive Voice Activity Detection (VAD)** 🎙️
 - **Achievement:** Improved speech capture from **75% → 95%**
@@ -60,14 +50,14 @@ This is an enhanced implementation of [OpenAvatarChat](https://github.com/HumanA
 
 ---
 
-## 🎓 Research Context
+##  Research Context
 
 These enhancements were developed as part of PhD research in **Human-AI Interaction**, specifically focusing on:
 
-- 🗣️ **Real-time Speech Processing Optimization**
-- 🤖 **Conversational AI Responsiveness**
-- 💬 **Natural Dialogue System Design**
-- 🎯 **User Experience in Voice Interfaces**
+- **Real-time Speech Processing Optimization**
+- **Conversational AI Responsiveness**
+- **Natural Dialogue System Design**
+- **User Experience in Voice Interfaces**
 
 ### Research Questions Addressed:
 1. How can adaptive algorithms improve speech detection in variable noise conditions?
@@ -76,7 +66,7 @@ These enhancements were developed as part of PhD research in **Human-AI Interact
 
 ---
 
-## 🔧 Technical Stack
+##  Technical Stack
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
@@ -90,7 +80,7 @@ These enhancements were developed as part of PhD research in **Human-AI Interact
 
 ---
 
-## 📊 Performance Metrics
+##  Performance Metrics
 
 ### Comparative Analysis
 
@@ -132,11 +122,11 @@ These enhancements were developed as part of PhD research in **Human-AI Interact
 
 ### Demo Features
 
-- 🎤 **Voice Interaction:** Speak naturally to the avatar
-- 🔊 **Real-time Response:** Immediate feedback with low latency
-- 👤 **Animated Avatar:** Synchronized lip movements and expressions
-- ⚡ **Interruption Support:** You can interrupt the avatar mid-response
-- 🌍 **Noise Handling:** Works in various acoustic environments
+-  **Voice Interaction:** Speak naturally to the avatar
+-  **Real-time Response:** Immediate feedback with low latency
+-  **Animated Avatar:** Synchronized lip movements and expressions
+-  **Interruption Support:** You can interrupt the avatar mid-response
+-  **Noise Handling:** Works in various acoustic environments
 
 ### Tips for Best Results
 
@@ -147,7 +137,7 @@ These enhancements were developed as part of PhD research in **Human-AI Interact
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 ┌─────────────┐
@@ -205,16 +195,16 @@ These enhancements were developed as part of PhD research in **Human-AI Interact
 
 ---
 
-## 🔗 Links
+##  Links
 
-- 📂 **Source Repository:** [github.com/farnooshoa/OpenAvatarChat](https://github.com/farnooshoa/OpenAvatarChat)
-- 🌿 **Enhancement Branch:** `speech-recognition-enhancements`
-- 🎨 **Original Project:** [HumanAIGC-Engineering/OpenAvatarChat](https://github.com/HumanAIGC-Engineering/OpenAvatarChat)
-- 📄 **Research Paper:** (Coming Soon)
+- **Source Repository:** [github.com/farnooshoa/OpenAvatarChat](https://github.com/farnooshoa/OpenAvatarChat)
+- **Enhancement Branch:** `speech-recognition-enhancements`
+- **Original Project:** [HumanAIGC-Engineering/OpenAvatarChat](https://github.com/HumanAIGC-Engineering/OpenAvatarChat)
+
 
 ---
 
-## 🛠️ Technical Implementation Details
+## Technical Implementation Details
 
 ### Enhancement 1: Adaptive VAD
 
@@ -255,7 +245,7 @@ if confidence > threshold and duration > min_duration:
 
 ---
 
-## 📈 Future Work
+## Future Work
 
 Potential areas for further research:
 
@@ -266,31 +256,16 @@ Potential areas for further research:
 
 ---
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **Original OpenAvatarChat Team:** [HumanAIGC-Engineering](https://github.com/HumanAIGC-Engineering)
 - **Groq:** For providing fast LLM inference API
 - **LiteAvatar:** For real-time avatar rendering
-- **Research Advisors:** (Your advisors' names)
 
 ---
-
-## 📝 License
-
-Apache 2.0 - See [LICENSE](LICENSE) file for details
-
----
-
-## 📧 Contact
+##  Contact
 
 **Researcher:** Farnoosh (farnooshoa)  
 **GitHub:** [github.com/farnooshoa](https://github.com/farnooshoa)  
 **Demo for:** PhD Interview
 
----
-
-<div align="center">
-
-**Made with ❤️ for advancing Human-AI Interaction**
-
-</div>
